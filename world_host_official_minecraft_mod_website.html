@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>World Host - Host Minecraft Worlds directly from your PC</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        mc: {
+                            dark: '#0B0F12',
+                            card: '#131A20',
+                            border: '#212D38',
+                            emerald: '#10B981',
+                            emeraldHover: '#059669',
+                            cyan: '#06B6D4',
+                            gold: '#F59E0B'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                        pixel: ['Press Start 2P', 'cursive']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0B0F12;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #212D38;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #10B981;
+        }
+        
+        .glow-emerald {
+            box-shadow: 0 0 25px -5px rgba(16, 185, 129, 0.3);
+        }
+        .glow-cyan {
+            box-shadow: 0 0 25px -5px rgba(6, 182, 212, 0.2);
+        }
+        .bg-grid {
+            background-image: radial-gradient(rgba(16, 185, 129, 0.12) 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+        .glass-panel {
+            background: rgba(19, 26, 32, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+    </style>
+</head>
+<body class="bg-mc-dark text-slate-100 font-sans antialiased bg-grid min-h-screen flex flex-col justify-between overflow-x-hidden">
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 ease-out flex items-center gap-3 bg-mc-card border border-mc-emerald text-white px-5 py-3 rounded-xl shadow-2xl">
+        <i class="fa-solid fa-circle-check text-mc-emerald text-xl"></i>
+        <div>
+            <p id="toast-title" class="font-bold text-sm">Download Started!</p>
+            <p id="toast-msg" class="text-xs text-slate-400">Installing World Host Mod...</p>
+        </div>
+    </div>
+
+    <!-- Navigation Header -->
+    <header class="sticky top-0 z-40 glass-panel border-b border-mc-border/50 transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                <!-- Logo -->
+                <a href="#" class="flex items-center gap-3 group">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-mc-emerald to-mc-cyan flex items-center justify-center text-mc-dark font-black shadow-lg group-hover:scale-105 transition-transform duration-300">
+                        <i class="fa-solid fa-server text-lg"></i>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="font-bold text-lg tracking-wide text-white group-hover:text-mc-emerald transition-colors">WORLD HOST</span>
+                        <span class="text-[10px] text-mc-emerald tracking-widest uppercase font-mono font-semibold">Fabric Mod</span>
+                    </div>
+                </a>
+
+                <!-- Desktop Nav Links -->
+                <nav class="hidden md:flex items-center gap-8">
+                    <a href="#features" data-i18n="nav_features" class="text-sm font-medium text-slate-300 hover:text-mc-emerald transition-colors">Features</a>
+                    <a href="#how-it-works" data-i18n="nav_how_it_works" class="text-sm font-medium text-slate-300 hover:text-mc-emerald transition-colors">How It Works</a>
+                    <a href="#downloads" data-i18n="nav_downloads" class="text-sm font-medium text-slate-300 hover:text-mc-emerald transition-colors">Versions</a>
+                    <a href="#faq" data-i18n="nav_faq" class="text-sm font-medium text-slate-300 hover:text-mc-emerald transition-colors">FAQ</a>
+                </nav>
+
+                <!-- Actions & Language Selector -->
+                <div class="flex items-center gap-4">
+                    <!-- Language Dropdown -->
+                    <div class="relative inline-block text-left">
+                        <button id="langBtn" onclick="toggleLangDropdown()" class="flex items-center gap-2 bg-mc-card/80 hover:bg-mc-border/80 border border-mc-border text-slate-200 px-3 py-2 rounded-lg text-sm font-medium transition-colors">
+                            <i class="fa-solid fa-globe text-mc-emerald"></i>
+                            <span id="currentLangText">English</span>
+                            <i class="fa-solid fa-chevron-down text-xs text-slate-400"></i>
+                        </button>
+
+                        <div id="langDropdown" class="hidden absolute right-0 mt-2 w-48 rounded-xl bg-mc-card border border-mc-border shadow-2xl py-2 z-50 max-h-80 overflow-y-auto">
+                            <button onclick="changeLanguage('en')" class="w-full text-left px-4 py-2 text-sm text-slate-200 hover:bg-mc-emerald/20 hover:text-mc-emerald flex items-center justify-between">
+                                <span>English</span>
+                                <span class="text-xs text-slate-400">EN</span>
+                            </button>
+                            <button onclick="changeLanguage('es')" class="w-full text-left px-4 py-2 text-sm text-slate-200 hover:bg-mc-emerald/20 hover:text-mc-emerald flex items-center justify-between">
+                                <span>Español</span>
+                                <span class="text-xs text-slate-400">ES</span>
+                            </button>
+                            <button onclick="changeLanguage('pt')" class="w-full text-left px-4 py-2 text-sm text-slate-200 hover:bg-mc-emerald/20 hover:text-mc-emerald flex items-center justify-between">
+                                <span>Português</span>
+                                <span class="text-xs text-slate-400">PT</span>
+                            </button>
+                            <button onclick="changeLanguage('fr')" class="w-full text-left px-4 py-2 text-sm text-slate-200 hover:bg-mc-emerald/20 hover:text-mc-emerald flex items-center justify-between">
+                                <span>Français</span>
+                                <span class="text-xs text-slate-400">FR</span>
+                            </button>
+                            <button onclick="changeLanguage('de')" class="w-full text-left px-4 py-2 text-sm text-slate-200 hover:bg-mc-emerald/20 hover:text-mc-emerald flex items-center justify-between">
+                                <span>Deutsch</span>
+                                <span class="text-xs text-slate-400">DE</span>
+                            </button>
+                            <button onclick="changeLanguage('ru')" class="w-full text-left px-4 py-2 text-sm text-slate-200 hover:bg-mc-emerald/20 hover:text-mc-emerald flex items-center justify-between">
+                                <span>Русский</span>
+                                <span class="text-xs text-slate-400">RU</span>
+                            </button>
+                            <button onclick="changeLanguage('zh')" class="w-full text-left px-4 py-2 text-sm text-slate-200 hover:bg-mc-emerald/20 hover:text-mc-emerald flex items-center justify-between">
+                                <span>中文 (简体)</span>
+                                <span class="text-xs text-slate-400">ZH</span>
+                            </button>
+                            <button onclick="changeLanguage('ja')" class="w-full text-left px-4 py-2 text-sm text-slate-200 hover:bg-mc-emerald/20 hover:text-mc-emerald flex items-center justify-between">
+                                <span>日本語</span>
+                                <span class="text-xs text-slate-400">JA</span>
+                            </button>
+                            <button onclick="changeLanguage('ko')" class="w-full text-left px-4 py-2 text-sm text-slate-200 hover:bg-mc-emerald/20 hover:text-mc-emerald flex items-center justify-between">
+                                <span>한국어</span>
+                                <span class="text-xs text-slate-400">KO</span>
+                            </button>
+                            <button onclick="changeLanguage('it')" class="w-full text-left px-4 py-2 text-sm text-slate-200 hover:bg-mc-emerald/20 hover:text-mc-emerald flex items-center justify-between">
+                                <span>Italiano</span>
+                                <span class="text-xs text-slate-400">IT</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- CTA Header Download -->
+                    <a href="#downloads" data-i18n="btn_download" class="hidden sm:inline-flex items-center gap-2 bg-gradient-to-r from-mc-emerald to-mc-emeraldHover text-mc-dark font-bold px-4 py-2 rounded-lg text-sm shadow-lg hover:brightness-110 transition-all hover:scale-105 active:scale-95">
+                        <i class="fa-solid fa-download"></i> Download
+                    </a>
+
+                    <!-- Mobile Menu Button -->
+                    <button onclick="toggleMobileMenu()" class="md:hidden text-slate-300 hover:text-white p-2">
+                        <i class="fa-solid fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Navigation Drawer -->
+        <div id="mobileMenu" class="hidden md:hidden glass-panel border-t border-mc-border px-4 pt-3 pb-6 space-y-3">
+            <a href="#features" onclick="toggleMobileMenu()" data-i18n="nav_features" class="block py-2 text-base font-medium text-slate-300 hover:text-mc-emerald">Features</a>
+            <a href="#how-it-works" onclick="toggleMobileMenu()" data-i18n="nav_how_it_works" class="block py-2 text-base font-medium text-slate-300 hover:text-mc-emerald">How It Works</a>
+            <a href="#downloads" onclick="toggleMobileMenu()" data-i18n="nav_downloads" class="block py-2 text-base font-medium text-slate-300 hover:text-mc-emerald">Versions</a>
+            <a href="#faq" onclick="toggleMobileMenu()" data-i18n="nav_faq" class="block py-2 text-base font-medium text-slate-300 hover:text-mc-emerald">FAQ</a>
+            <a href="#downloads" onclick="toggleMobileMenu()" data-i18n="btn_download" class="w-full inline-flex justify-center items-center gap-2 bg-mc-emerald text-mc-dark font-bold px-4 py-2.5 rounded-lg text-sm">
+                <i class="fa-solid fa-download"></i> Download Mod
+            </a>
+        </div>
+    </header>
+
+    <main class="flex-grow">
+        <!-- Hero Section -->
+        <section class="relative pt-12 pb-20 lg:pt-24 lg:pb-32 overflow-hidden">
+            <!-- Decorative Glow background -->
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-mc-emerald/10 rounded-full blur-[120px] pointer-events-none"></div>
+
+            <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
+                <div class="space-y-6">
+                    <!-- Badges -->
+                    <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-mc-card border border-mc-border/80 text-xs font-semibold text-mc-emerald shadow-lg">
+                        <span class="w-2 h-2 rounded-full bg-mc-emerald animate-pulse"></span>
+                        <span data-i18n="hero_badge">Fabric 1.21.11 & 26.3 Ready</span>
+                    </div>
+
+                    <!-- Main Title -->
+                    <h1 class="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-white leading-tight max-w-4xl mx-auto">
+                        <span data-i18n="hero_title_1">Host Worlds directly from</span>
+                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-mc-emerald via-emerald-300 to-mc-cyan block mt-2" data-i18n="hero_title_2">Your Own PC Hardware</span>
+                    </h1>
+
+                    <!-- Subtitle -->
+                    <p class="text-base sm:text-xl text-slate-300 max-w-2xl mx-auto leading-relaxed" data-i18n="hero_subtitle">
+                        Forget paying for external Minecraft servers or struggling with complex port forwarding. World Host allows you to host singleplayer worlds using your CPU & RAM. Your friends only need to install the mod!
+                    </p>
+
+                    <!-- CTA Buttons -->
+                    <div class="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+                        <a href="#downloads" class="w-full sm:w-auto inline-flex items-center justify-center gap-3 bg-gradient-to-r from-mc-emerald to-mc-emeraldHover text-mc-dark font-extrabold px-8 py-4 rounded-xl text-base shadow-xl hover:shadow-mc-emerald/30 hover:scale-105 active:scale-95 transition-all glow-emerald">
+                            <i class="fa-solid fa-download text-lg"></i>
+                            <span data-i18n="hero_cta_download">Download World Host</span>
+                        </a>
+                        <a href="#how-it-works" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-mc-card hover:bg-mc-border/60 border border-mc-border text-slate-200 font-semibold px-6 py-4 rounded-xl text-base transition-colors">
+                            <i class="fa-solid fa-circle-play text-mc-emerald"></i>
+                            <span data-i18n="hero_cta_guide">Quick Start Guide</span>
+                        </a>
+                    </div>
+
+                    <!-- Highlights Stats -->
+                    <div class="pt-10 grid grid-cols-3 gap-6 border-t border-mc-border/60 max-w-md mx-auto mt-8">
+                        <div>
+                            <p class="text-2xl sm:text-3xl font-bold text-white font-mono">100%</p>
+                            <p class="text-xs sm:text-sm text-slate-400 mt-1" data-i18n="stat_free">Free & Open</p>
+                        </div>
+                        <div>
+                            <p class="text-2xl sm:text-3xl font-bold text-mc-emerald font-mono">Fabric</p>
+                            <p class="text-xs sm:text-sm text-slate-400 mt-1" data-i18n="stat_modloader">Mod Loader</p>
+                        </div>
+                        <div>
+                            <p class="text-2xl sm:text-3xl font-bold text-mc-cyan font-mono">0$</p>
+                            <p class="text-xs sm:text-sm text-slate-400 mt-1" data-i18n="stat_server_cost">No Server Costs</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Grid Section -->
+        <section id="features" class="py-20 bg-mc-card/30 border-y border-mc-border/40">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center max-w-3xl mx-auto mb-16 space-y-4">
+                    <h2 class="text-3xl sm:text-4xl font-extrabold text-white" data-i18n="feat_header_title">Why Choose World Host?</h2>
+                    <p class="text-slate-400 text-base" data-i18n="feat_header_subtitle">Tired of laggy free hosts, paid monthly servers, or port forwarding errors? World Host makes multiplayer effortless.</p>
+                </div>
+
+                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <!-- Feature 1 -->
+                    <div class="glass-panel p-6 rounded-2xl border border-mc-border hover:border-mc-emerald/50 transition-all duration-300 group">
+                        <div class="w-12 h-12 rounded-xl bg-mc-emerald/10 border border-mc-emerald/30 text-mc-emerald flex items-center justify-center text-2xl mb-5 group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-microchip"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-2" data-i18n="feat1_title">Host with Your PC</h3>
+                        <p class="text-sm text-slate-400 leading-relaxed" data-i18n="feat1_desc">Leverage your own computer hardware (CPU & RAM) to host smooth, high-performance sessions without relying on third-party servers.</p>
+                    </div>
+
+                    <!-- Feature 2 -->
+                    <div class="glass-panel p-6 rounded-2xl border border-mc-border hover:border-mc-emerald/50 transition-all duration-300 group">
+                        <div class="w-12 h-12 rounded-xl bg-mc-cyan/10 border border-mc-cyan/30 text-mc-cyan flex items-center justify-center text-2xl mb-5 group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-users"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-2" data-i18n="feat2_title">Both Players Need Mod</h3>
+                        <p class="text-sm text-slate-400 leading-relaxed" data-i18n="feat2_desc">As long as both you and your friends have the World Host mod installed on Fabric, joining your singleplayer world is 1-click easy.</p>
+                    </div>
+
+                    <!-- Feature 3 -->
+                    <div class="glass-panel p-6 rounded-2xl border border-mc-border hover:border-mc-emerald/50 transition-all duration-300 group">
+                        <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center text-2xl mb-5 group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-shield-halved"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-2" data-i18n="feat3_title">No Port Forwarding</h3>
+                        <p class="text-sm text-slate-400 leading-relaxed" data-i18n="feat3_desc">Say goodbye to router configurations, static IPs, and dangerous port openings. Our P2P networking handles connections safely.</p>
+                    </div>
+
+                    <!-- Feature 4 -->
+                    <div class="glass-panel p-6 rounded-2xl border border-mc-border hover:border-mc-emerald/50 transition-all duration-300 group">
+                        <div class="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-400 flex items-center justify-center text-2xl mb-5 group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-cubes"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-2" data-i18n="feat4_title">Fabric 1.21.11 & 26.3</h3>
+                        <p class="text-sm text-slate-400 leading-relaxed" data-i18n="feat4_desc">Built natively for modern Fabric modloader releases, including version 1.21.11 and the 26.3 Fabric framework.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- How It Works Section -->
+        <section id="how-it-works" class="py-20 relative">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center max-w-3xl mx-auto mb-16 space-y-4">
+                    <h2 class="text-3xl sm:text-4xl font-extrabold text-white" data-i18n="how_header_title">How It Works in 3 Simple Steps</h2>
+                    <p class="text-slate-400 text-base" data-i18n="how_header_subtitle">Get your multiplayer world running in under two minutes.</p>
+                </div>
+
+                <div class="grid md:grid-cols-3 gap-8 relative">
+                    <!-- Step 1 -->
+                    <div class="bg-mc-card p-8 rounded-2xl border border-mc-border relative flex flex-col items-center text-center">
+                        <div class="w-12 h-12 rounded-full bg-mc-emerald text-mc-dark font-black text-xl flex items-center justify-center mb-6 shadow-lg">1</div>
+                        <h3 class="text-xl font-bold text-white mb-3" data-i18n="step1_title">Install Mod (Both You & Friends)</h3>
+                        <p class="text-sm text-slate-400 leading-relaxed" data-i18n="step1_desc">Download World Host for your Fabric version (1.21.11 or 26.3) and place it in your Minecraft <code>mods</code> folder. **Important:** Your friends must install it too!</p>
+                    </div>
+
+                    <!-- Step 2 -->
+                    <div class="bg-mc-card p-8 rounded-2xl border border-mc-border relative flex flex-col items-center text-center">
+                        <div class="w-12 h-12 rounded-full bg-mc-emerald text-mc-dark font-black text-xl flex items-center justify-center mb-6 shadow-lg">2</div>
+                        <h3 class="text-xl font-bold text-white mb-3" data-i18n="step2_title">Open Singleplayer World</h3>
+                        <p class="text-sm text-slate-400 leading-relaxed" data-i18n="step2_desc">Launch Minecraft, load any singleplayer world, pause the game, and click the new <strong class="text-mc-emerald">"Host World"</strong> button provided by the mod.</p>
+                    </div>
+
+                    <!-- Step 3 -->
+                    <div class="bg-mc-card p-8 rounded-2xl border border-mc-border relative flex flex-col items-center text-center">
+                        <div class="w-12 h-12 rounded-full bg-mc-emerald text-mc-dark font-black text-xl flex items-center justify-center mb-6 shadow-lg">3</div>
+                        <h3 class="text-xl font-bold text-white mb-3" data-i18n="step3_title">Invite & Play Together</h3>
+                        <p class="text-sm text-slate-400 leading-relaxed" data-i18n="step3_desc">Copy your unique world code or invite friends directly through your in-game list. They click join and enter your world instantly!</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Download & Versions Section -->
+        <section id="downloads" class="py-20 bg-mc-card/40 border-t border-mc-border/40">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center max-w-3xl mx-auto mb-16 space-y-4">
+                    <span class="text-mc-emerald font-mono text-xs uppercase font-bold tracking-widest" data-i18n="dl_tag">Official Downloads</span>
+                    <h2 class="text-3xl sm:text-4xl font-extrabold text-white" data-i18n="dl_title">Download World Host for Fabric</h2>
+                    <p class="text-slate-400 text-base" data-i18n="dl_subtitle">Choose the target Fabric version for your Minecraft client setup.</p>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                    <!-- Download Card 1: 1.21.11 Fabric -->
+                    <div class="glass-panel p-8 rounded-2xl border border-mc-border hover:border-mc-emerald transition-all duration-300 relative flex flex-col justify-between">
+                        <div class="absolute -top-3 right-6 bg-mc-emerald text-mc-dark font-extrabold text-xs px-3 py-1 rounded-full uppercase tracking-wider" data-i18n="dl_badge_popular">
+                            Popular
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-3 mb-4">
+                                <i class="fa-solid fa-cube text-mc-emerald text-3xl"></i>
+                                <div>
+                                    <h3 class="text-2xl font-bold text-white">Fabric 1.21.11</h3>
+                                    <p class="text-xs text-slate-400">Minecraft 1.21.11 Release</p>
+                                </div>
+                            </div>
+                            <ul class="text-sm text-slate-300 space-y-2 mb-8 border-t border-b border-mc-border/50 py-4">
+                                <li class="flex items-center gap-2"><i class="fa-solid fa-check text-mc-emerald text-xs"></i> <span data-i18n="dl_feat_1">Fabric Loader required</span></li>
+                                <li class="flex items-center gap-2"><i class="fa-solid fa-check text-mc-emerald text-xs"></i> <span data-i18n="dl_feat_2">Built-in PC resource allocator</span></li>
+                                <li class="flex items-center gap-2"><i class="fa-solid fa-check text-mc-emerald text-xs"></i> <span data-i18n="dl_feat_3">Full friend invite GUI</span></li>
+                            </ul>
+                        </div>
+                        <button onclick="startDownload('Fabric 1.21.11')" class="w-full bg-mc-emerald hover:bg-mc-emeraldHover text-mc-dark font-bold py-3.5 px-6 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg">
+                            <i class="fa-solid fa-download"></i>
+                            <span data-i18n="dl_btn_1">Download for Fabric 1.21.11</span>
+                        </button>
+                    </div>
+
+                    <!-- Download Card 2: 26.3 Fabric -->
+                    <div class="glass-panel p-8 rounded-2xl border border-mc-border hover:border-mc-cyan transition-all duration-300 relative flex flex-col justify-between">
+                        <div class="absolute -top-3 right-6 bg-mc-cyan text-mc-dark font-extrabold text-xs px-3 py-1 rounded-full uppercase tracking-wider" data-i18n="dl_badge_latest">
+                            Version 26.3
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-3 mb-4">
+                                <i class="fa-solid fa-bolt text-mc-cyan text-3xl"></i>
+                                <div>
+                                    <h3 class="text-2xl font-bold text-white">Fabric 26.3</h3>
+                                    <p class="text-xs text-slate-400">Minecraft 26.3 Framework</p>
+                                </div>
+                            </div>
+                            <ul class="text-sm text-slate-300 space-y-2 mb-8 border-t border-b border-mc-border/50 py-4">
+                                <li class="flex items-center gap-2"><i class="fa-solid fa-check text-mc-cyan text-xs"></i> <span data-i18n="dl_feat_1">Fabric Loader required</span></li>
+                                <li class="flex items-center gap-2"><i class="fa-solid fa-check text-mc-cyan text-xs"></i> <span data-i18n="dl_feat_2">Enhanced P2P latency optimizations</span></li>
+                                <li class="flex items-center gap-2"><i class="fa-solid fa-check text-mc-cyan text-xs"></i> <span data-i18n="dl_feat_3">Full friend invite GUI</span></li>
+                            </ul>
+                        </div>
+                        <button onclick="startDownload('Fabric 26.3')" class="w-full bg-mc-cyan hover:bg-cyan-400 text-mc-dark font-bold py-3.5 px-6 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg">
+                            <i class="fa-solid fa-download"></i>
+                            <span data-i18n="dl_btn_2">Download for Fabric 26.3</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FAQ Accordion Section -->
+        <section id="faq" class="py-20">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-16 space-y-4">
+                    <h2 class="text-3xl sm:text-4xl font-extrabold text-white" data-i18n="faq_header">Frequently Asked Questions</h2>
+                    <p class="text-slate-400 text-base" data-i18n="faq_subtitle">Everything you need to know about World Host.</p>
+                </div>
+
+                <div class="space-y-4" id="faq-accordion">
+                    <!-- Q1 -->
+                    <div class="bg-mc-card border border-mc-border rounded-xl overflow-hidden">
+                        <button onclick="toggleFaq(1)" class="w-full p-5 text-left flex items-center justify-between font-bold text-white hover:text-mc-emerald transition-colors">
+                            <span data-i18n="faq_q1">Do my friends also need to install World Host?</span>
+                            <i id="faq-icon-1" class="fa-solid fa-chevron-down text-slate-400 transition-transform duration-300"></i>
+                        </button>
+                        <div id="faq-ans-1" class="hidden p-5 pt-0 text-sm text-slate-300 border-t border-mc-border/40 leading-relaxed" data-i18n="faq_a1">
+                            Yes! Both the host and all connecting friends must have the World Host mod installed on their Fabric launcher. This enables direct, safe Peer-to-Peer communication without external servers.
+                        </div>
+                    </div>
+
+                    <!-- Q2 -->
+                    <div class="bg-mc-card border border-mc-border rounded-xl overflow-hidden">
+                        <button onclick="toggleFaq(2)" class="w-full p-5 text-left flex items-center justify-between font-bold text-white hover:text-mc-emerald transition-colors">
+                            <span data-i18n="faq_q2">Does hosting consume a lot of PC resources?</span>
+                            <i id="faq-icon-2" class="fa-solid fa-chevron-down text-slate-400 transition-transform duration-300"></i>
+                        </button>
+                        <div id="faq-ans-2" class="hidden p-5 pt-0 text-sm text-slate-300 border-t border-mc-border/40 leading-relaxed" data-i18n="faq_a2">
+                            World Host uses your PC's CPU and RAM to run the world. If your computer runs Minecraft singleplayer smoothly, hosting for 2-5 friends usually requires just a bit more RAM (around 4GB to 6GB allocated to Minecraft).
+                        </div>
+                    </div>
+
+                    <!-- Q3 -->
+                    <div class="bg-mc-card border border-mc-border rounded-xl overflow-hidden">
+                        <button onclick="toggleFaq(3)" class="w-full p-5 text-left flex items-center justify-between font-bold text-white hover:text-mc-emerald transition-colors">
+                            <span data-i18n="faq_q3">Do I need to port forward or edit my router settings?</span>
+                            <i id="faq-icon-3" class="fa-solid fa-chevron-down text-slate-400 transition-transform duration-300"></i>
+                        </button>
+                        <div id="faq-ans-3" class="hidden p-5 pt-0 text-sm text-slate-300 border-t border-mc-border/40 leading-relaxed" data-i18n="faq_a3">
+                            No port forwarding is required! World Host automatically establishes secure connections, bypassing complicated router configurations and technical setups.
+                        </div>
+                    </div>
+
+                    <!-- Q4 -->
+                    <div class="bg-mc-card border border-mc-border rounded-xl overflow-hidden">
+                        <button onclick="toggleFaq(4)" class="w-full p-5 text-left flex items-center justify-between font-bold text-white hover:text-mc-emerald transition-colors">
+                            <span data-i18n="faq_q4">Is World Host free?</span>
+                            <i id="faq-icon-4" class="fa-solid fa-chevron-down text-slate-400 transition-transform duration-300"></i>
+                        </button>
+                        <div id="faq-ans-4" class="hidden p-5 pt-0 text-sm text-slate-300 border-t border-mc-border/40 leading-relaxed" data-i18n="faq_a4">
+                            Yes, World Host is completely 100% free and open to all Minecraft players.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-mc-card border-t border-mc-border py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+                <!-- Brand -->
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-mc-emerald flex items-center justify-center text-mc-dark font-black text-sm">
+                        <i class="fa-solid fa-server"></i>
+                    </div>
+                    <span class="font-bold text-white tracking-wide">WORLD HOST</span>
+                    <span class="text-xs text-slate-500 font-mono">| Fabric Mod</span>
+                </div>
+
+                <!-- Copyright Notice -->
+                <div class="text-xs text-slate-400 text-center md:text-left space-y-1">
+                    <p data-i18n="footer_copy">© 2026 World Host Mod. All rights reserved.</p>
+                    <p class="text-slate-500" data-i18n="footer_disclaimer">Not affiliated with Mojang Studios or Microsoft.</p>
+                </div>
+
+                <!-- Links -->
+                <div class="flex items-center gap-6 text-slate-400 text-lg">
+                    <a href="#" class="hover:text-mc-emerald transition-colors" title="Discord Community"><i class="fa-brands fa-discord"></i></a>
+                    <a href="#" class="hover:text-mc-emerald transition-colors" title="GitHub Repository"><i class="fa-brands fa-github"></i></a>
+                    <a href="#" class="hover:text-mc-emerald transition-colors" title="CurseForge / Modrinth"><i class="fa-solid fa-cubes"></i></a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Translations & JavaScript Logic -->
+    <script>
+        // Dictionary of 10 supported languages
+        const translations = {
+            en: {
+                nav_features: "Features",
+                nav_how_it_works: "How It Works",
+                nav_downloads: "Versions",
+                nav_faq: "FAQ",
+                btn_download: "Download Mod",
+                hero_badge: "Fabric 1.21.11 & 26.3 Ready",
+                hero_title_1: "Host Worlds directly from",
+                hero_title_2: "Your Own PC Hardware",
+                hero_subtitle: "Forget paying for external Minecraft servers or struggling with complex port forwarding. World Host allows you to host singleplayer worlds using your CPU & RAM. Your friends only need to install the mod!",
+                hero_cta_download: "Download World Host",
+                hero_cta_guide: "Quick Start Guide",
+                stat_free: "Free & Open",
+                stat_modloader: "Fabric Loader",
+                stat_server_cost: "No Server Costs",
+                mock_copy_invite: "Copy World Host Invite Link",
+                feat_header_title: "Why Choose World Host?",
+                feat_header_subtitle: "Tired of laggy free hosts, paid monthly servers, or port forwarding errors? World Host makes multiplayer effortless.",
+                feat1_title: "Host with Your PC",
+                feat1_desc: "Leverage your own computer hardware (CPU & RAM) to host smooth, high-performance sessions without relying on third-party servers.",
+                feat2_title: "Both Players Need Mod",
+                feat2_desc: "As long as both you and your friends have the World Host mod installed on Fabric, joining your singleplayer world is 1-click easy.",
+                feat3_title: "No Port Forwarding",
+                feat3_desc: "Say goodbye to router configurations, static IPs, and dangerous port openings. Our P2P networking handles connections safely.",
+                feat4_title: "Fabric 1.21.11 & 26.3",
+                feat4_desc: "Built natively for modern Fabric modloader releases, including version 1.21.11 and the 26.3 Fabric framework.",
+                how_header_title: "How It Works in 3 Simple Steps",
+                how_header_subtitle: "Get your multiplayer world running in under two minutes.",
+                step1_title: "Install Mod (Both You & Friends)",
+                step1_desc: "Download World Host for your Fabric version (1.21.11 or 26.3) and place it in your Minecraft mods folder. Important: Your friends must install it too!",
+                step2_title: "Open Singleplayer World",
+                step2_desc: "Launch Minecraft, load any singleplayer world, pause the game, and click the new 'Host World' button provided by the mod.",
+                step3_title: "Invite & Play Together",
+                step3_desc: "Copy your unique world code or invite friends directly through your in-game list. They click join and enter your world instantly!",
+                dl_tag: "Official Downloads",
+                dl_title: "Download World Host for Fabric",
+                dl_subtitle: "Choose the target Fabric version for your Minecraft client setup.",
+                dl_badge_popular: "Popular",
+                dl_badge_latest: "Version 26.3",
+                dl_feat_1: "Fabric Loader required",
+                dl_feat_2: "Built-in PC resource allocator",
+                dl_feat_3: "Full friend invite GUI",
+                dl_btn_1: "Download for Fabric 1.21.11",
+                dl_btn_2: "Download for Fabric 26.3",
+                faq_header: "Frequently Asked Questions",
+                faq_subtitle: "Everything you need to know about World Host.",
+                faq_q1: "Do my friends also need to install World Host?",
+                faq_a1: "Yes! Both the host and all connecting friends must have the World Host mod installed on their Fabric launcher. This enables direct, safe Peer-to-Peer communication without external servers.",
+                faq_q2: "Does hosting consume a lot of PC resources?",
+                faq_a2: "World Host uses your PC's CPU and RAM to run the world. If your computer runs Minecraft singleplayer smoothly, hosting for 2-5 friends usually requires just a bit more RAM (around 4GB to 6GB allocated to Minecraft).",
+                faq_q3: "Do I need to port forward or edit my router settings?",
+                faq_a3: "No port forwarding is required! World Host automatically establishes secure connections, bypassing complicated router configurations and technical setups.",
+                faq_q4: "Is World Host free?",
+                faq_a4: "Yes, World Host is completely 100% free and open to all Minecraft players.",
+                footer_copy: "© 2026 World Host Mod. All rights reserved.",
+                footer_disclaimer: "Not affiliated with Mojang Studios or Microsoft."
+            },
+            es: {
+                nav_features: "Características",
+                nav_how_it_works: "Cómo Funciona",
+                nav_downloads: "Versiones",
+                nav_faq: "Preguntas",
+                btn_download: "Descargar Mod",
+                hero_badge: "Listo para Fabric 1.21.11 y 26.3",
+                hero_title_1: "Hostea mundos usando",
+                hero_title_2: "Los Componentes de tu PC",
+                hero_subtitle: "Olvídate de pagar servidores externos de Minecraft o batallar abriendo puertos. Con World Host usas la potencia de tu propio procesador y RAM. ¡Tus amigos solo tienen que instalarse el mod!",
+                hero_cta_download: "Descargar World Host",
+                hero_cta_guide: "Guía Rápida",
+                stat_free: "Gratis y Libre",
+                stat_modloader: "Cargador Fabric",
+                stat_server_cost: "Sin Gastos de Server",
+                mock_copy_invite: "Copiar Enlace de Invitación",
+                feat_header_title: "Por qué elegir World Host?",
+                mock_hardware_host: "Hardware Host:",
+                mock_players: "Amigos Conectados:",
+                mock_online_players: "Amigos en Línea (Mod Requerido):",
+                mock_copy_invite: "Copiar Enlace de Invitación",
+                feat_header_title: "¿Por qué elegir World Host?",
+                feat_header_subtitle: "¿Cansado del lag de hosts gratuitos o de pagar mensualidades? World Host facilita el multijugador.",
+                feat1_title: "Hostea con tu PC",
+                feat1_desc: "Aprovecha los componentes de tu computadora (CPU y RAM) para hostear sesiones fluidas y sin depender de servidores de terceros.",
+                feat2_title: "Ambos Necesitan el Mod",
+                feat2_desc: "Tanto tú como tus amigos deben tener instalado el mod World Host en Fabric para unirse en 1 solo clic.",
+                feat3_title: "Sin Abrir Puertos",
+                feat3_desc: "Di adiós a configurar el módem o IP estática. La red P2P gestiona la conexión de forma directa y segura.",
+                feat4_title: "Fabric 1.21.11 y 26.3",
+                feat4_desc: "Desarrollado nativamente para las versiones modernas de Fabric, incluyendo 1.21.11 y el framework 26.3.",
+                how_header_title: "Cómo Funciona en 3 Pasos",
+                how_header_subtitle: "Pon a funcionar tu mundo multijugador en menos de dos minutos.",
+                step1_title: "Instala el Mod (Tú y tus Amigos)",
+                step1_desc: "Descarga World Host para tu versión de Fabric (1.21.11 o 26.3) y colócalo en tu carpeta 'mods'. ¡Importante: tus amigos también deben tenerlo!",
+                step2_title: "Abre tu Mundo Unjugador",
+                step2_desc: "Inicia Minecraft, entra a tu mundo, pausa el juego y presiona el nuevo botón 'Hostear Mundo' creado por el mod.",
+                step3_title: "Invita y Juega con Amigos",
+                step3_desc: "Copia el código de tu mundo e invita a tus amigos. Ellos presionan unirse y entran al instante.",
+                dl_tag: "Descargas Oficiales",
+                dl_title: "Descargar World Host para Fabric",
+                dl_subtitle: "Elige la versión de Fabric correspondiente a tu Minecraft.",
+                dl_badge_popular: "Popular",
+                dl_badge_latest: "Versión 26.3",
+                dl_feat_1: "Requiere Fabric Loader",
+                dl_feat_2: "Asignación eficiente de recursos",
+                dl_feat_3: "Interfaz completa para invitar amigos",
+                dl_btn_1: "Descargar para Fabric 1.21.11",
+                dl_btn_2: "Descargar para Fabric 26.3",
+                faq_header: "Preguntas Frecuentes",
+                faq_subtitle: "Todo lo que necesitas saber sobre World Host.",
+                faq_q1: "¿Mis amigos también tienen que instalarse el mod World Host?",
+                faq_a1: "¡Sí! Tanto el anfitrión como los amigos deben tener el mod World Host instalado en Fabric para poder conectarse directamente.",
+                faq_q2: "¿Hostear consume muchos recursos de mi PC?",
+                faq_a2: "Aprovecha el CPU y la RAM de tu PC. Si juegas unjugador de forma fluida, solo requerirás un poco más de RAM (de 4GB a 6GB asignados a Minecraft).",
+                faq_q3: "¿Tengo que abrir puertos en mi router?",
+                faq_a3: "¡No hace falta abrir puertos! El mod utiliza conexiones P2P automáticas y seguras.",
+                faq_q4: "¿World Host es gratuito?",
+                faq_a4: "Sí, World Host es 100% gratuito para todos los jugadores de Minecraft.",
+                footer_copy: "© 2026 World Host Mod. Todos los derechos reservados.",
+                footer_disclaimer: "No afiliado con Mojang Studios ni Microsoft."
+            },
+            pt: {
+                nav_features: "Recursos",
+                nav_how_it_works: "Como Funciona",
+                nav_downloads: "Versões",
+                nav_faq: "FAQ",
+                btn_download: "Baixar Mod",
+                hero_badge: "Compatível com Fabric 1.21.11 e 26.3",
+                hero_title_1: "Hospede mundos usando",
+                hero_title_2: "O Hardware do seu PC",
+                hero_subtitle: "Esqueça pagar servidores externos ou abrir portas no roteador. O World Host usa seu processador e RAM. Seus amigos só precisam instalar o mod!",
+                hero_cta_download: "Baixar World Host",
+                hero_cta_guide: "Guia Rápido",
+                stat_free: "Gratuito",
+                stat_modloader: "Fabric Loader",
+                stat_server_cost: "Sem Custos",
+                mock_copy_invite: "Copiar Link de Convite",
+                feat_header_title: "Por que escolher o World Host?",
+                feat_header_subtitle: "Chega de lag em servidores grátis ou mensalidades caras. O World Host facilita o multijogador.",
+                feat1_title: "Hospede no seu PC",
+                feat1_desc: "Aproveite seu próprio hardware (CPU e RAM) para rodar partidas sem depender de servidores externos.",
+                feat2_title: "Todos Precisam do Mod",
+                feat2_desc: "Se você e seus amigos tiverem o mod World Host no Fabric, entrar no mundo é muito fácil.",
+                feat3_title: "Sem Abrir Portas",
+                feat3_desc: "Esqueça as configurações de roteador. A rede P2P cuida das conexões de forma segura.",
+                feat4_title: "Fabric 1.21.11 & 26.3",
+                feat4_desc: "Suporte nativo para as versões modernas do Fabric Loader.",
+                how_header_title: "Como Funciona em 3 Passos",
+                how_header_subtitle: "Inicie seu mundo multijogador em menos de 2 minutos.",
+                step1_title: "Instale o Mod (Você e Amigos)",
+                step1_desc: "Baixe o World Host para Fabric e coloque na pasta 'mods'. Importante: Seus amigos também precisam instalar!",
+                step2_title: "Abra o Mundo Singleplayer",
+                step2_desc: "Abra o Minecraft, entre no seu mundo e clique no novo botão 'Hospedar Mundo'.",
+                step3_title: "Convide e Jogue",
+                step3_desc: "Envie o código para seus amigos para entrarem instantaneamente.",
+                dl_tag: "Downloads Oficiais",
+                dl_title: "Baixar World Host para Fabric",
+                dl_subtitle: "Escolha a versão do Fabric para o seu jogo.",
+                dl_badge_popular: "Popular",
+                dl_badge_latest: "Versão 26.3",
+                dl_feat_1: "Requer Fabric Loader",
+                dl_feat_2: "Alocação eficiente de recursos",
+                dl_feat_3: "Interface de convite integrada",
+                dl_btn_1: "Baixar para Fabric 1.21.11",
+                dl_btn_2: "Baixar para Fabric 26.3",
+                faq_header: "Perguntas Frequentes",
+                faq_subtitle: "Tudo o que você precisa saber.",
+                faq_q1: "Meus amigos também precisam instalar o mod?",
+                faq_a1: "Sim! Todos os jogadores devem ter o mod instalado para conectar via P2P.",
+                faq_q2: "Hospedar consome muitos recursos do PC?",
+                faq_a2: "Usa sua CPU e RAM. Recomendamos de 4GB a 6GB de RAM alocados ao Minecraft.",
+                faq_q3: "Preciso abrir portas no roteador?",
+                faq_a3: "Não! A tecnologia P2P faz a conexão automaticamente sem abrir portas.",
+                faq_q4: "O World Host é gratuito?",
+                faq_a4: "Sim, 100% gratuito.",
+                footer_copy: "© 2026 World Host Mod. Todos os direitos reservados.",
+                footer_disclaimer: "Não afiliado à Mojang Studios ou Microsoft."
+            },
+            fr: {
+                nav_features: "Fonctionnalités",
+                nav_how_it_works: "Comment ça marche",
+                nav_downloads: "Versions",
+                nav_faq: "FAQ",
+                btn_download: "Télécharger",
+                hero_badge: "Compatible Fabric 1.21.11 & 26.3",
+                hero_title_1: "Hébergez vos mondes avec",
+                hero_title_2: "Les Composants de votre PC",
+                hero_subtitle: "Plus besoin de payer des serveurs Minecraft ou de configurer des redirections de ports. Utilisez directement votre processeur et votre RAM. Vos amis doivent juste installer le mod !",
+                hero_cta_download: "Télécharger World Host",
+                hero_cta_guide: "Guide Rapide",
+                stat_free: "Gratuit & Open",
+                stat_modloader: "Fabric Loader",
+                stat_server_cost: "0€ de Serveur",
+                mock_copy_invite: "Copier le Lien d'invitation",
+                feat_header_title: "Pourquoi choisir World Host ?",
+                feat_header_subtitle: "Fini le lag des hébergeurs gratuits et les abonnements payants.",
+                feat1_title: "Hébergez avec votre PC",
+                feat1_desc: "Utilisez la puissance de votre CPU et RAM pour une expérience fluide.",
+                feat2_title: "Mod requis pour tous",
+                feat2_desc: "Vous et vos amis devez installer le mod sur Fabric pour vous rejoindre en un clic.",
+                feat3_title: "Sans Ouvrir de Ports",
+                feat3_desc: "Pas besoin de toucher à votre routeur. La connexion P2P est automatique et sécurisée.",
+                feat4_title: "Fabric 1.21.11 & 26.3",
+                feat4_desc: "Conçu spécifiquement pour les dernières versions de Fabric.",
+                how_header_title: "Comment ça marche en 3 étapes",
+                how_header_subtitle: "Lancez votre monde multijoueur en moins de 2 minutes.",
+                step1_title: "Installez le mod (Vous & Vos amis)",
+                step1_desc: "Téléchargez World Host et placez-le dans le dossier mods. Attention: vos amis doivent aussi l'installer !",
+                step2_title: "Ouvrez votre monde solo",
+                step2_desc: "Ouvrez n'importe quel monde solo et cliquez sur 'Héberger le Monde'.",
+                step3_title: "Invitez vos amis",
+                step3_desc: "Partagez votre code d'invitation pour jouer ensemble immédiatement.",
+                dl_tag: "Téléchargements Officiels",
+                dl_title: "Télécharger World Host pour Fabric",
+                dl_subtitle: "Sélectionnez votre version de Fabric.",
+                dl_badge_popular: "Populaire",
+                dl_badge_latest: "Version 26.3",
+                dl_feat_1: "Fabric Loader requis",
+                dl_feat_2: "Gestion efficace des ressources",
+                dl_feat_3: "Interface d'invitation intégrée",
+                dl_btn_1: "Télécharger pour Fabric 1.21.11",
+                dl_btn_2: "Télécharger pour Fabric 26.3",
+                faq_header: "Foire Aux Questions",
+                faq_subtitle: "Toutes les réponses à vos questions.",
+                faq_q1: "Mes amis doivent-ils aussi installer le mod ?",
+                faq_a1: "Oui ! Tous les joueurs doivent posséder le mod World Host sur Fabric.",
+                faq_q2: "Est-ce que l'hébergement consomme beaucoup ?",
+                faq_a2: "Il utilise le CPU et la RAM de votre PC. Prévoyez environ 4 à 6 Go de RAM alloués à Minecraft.",
+                faq_q3: "Faut-il ouvrir des ports ?",
+                faq_a3: "Non, aucune redirection de port n'est nécessaire.",
+                faq_q4: "World Host est-il gratuit ?",
+                faq_a4: "Oui, 100% gratuit.",
+                footer_copy: "© 2026 World Host Mod. Tous droits réservés.",
+                footer_disclaimer: "Non affilié à Mojang Studios ou Microsoft."
+            },
+            de: {
+                nav_features: "Funktionen",
+                nav_how_it_works: "So geht's",
+                nav_downloads: "Versionen",
+                nav_faq: "FAQ",
+                btn_download: "Mod Herunterladen",
+                hero_badge: "Fabric 1.21.11 & 26.3 Bereit",
+                hero_title_1: "Hoste Welten direkt über",
+                hero_title_2: "Deine Eigene PC-Hardware",
+                hero_subtitle: "Zahle nicht mehr für externe Server und spare dir kompliziertes Port-Forwarding. World Host nutzt deine CPU & RAM. Deine Freunde müssen nur den Mod installieren!",
+                hero_cta_download: "World Host Herunterladen",
+                hero_cta_guide: "Schnellstart-Anleitung",
+                stat_free: "Kostenlos & Open",
+                stat_modloader: "Fabric Loader",
+                stat_server_cost: "Keine Serverkosten",
+                mock_copy_invite: "Einladungslink Kopieren",
+                feat_header_title: "Warum World Host?",
+                feat_header_subtitle: "Keine ruckelnden Gratis-Server oder monatlichen Gebühren mehr.",
+                feat1_title: "Hosten auf deinem PC",
+                feat1_desc: "Nutze deine eigene Hardware für flüssiges Multiplayer-Gaming.",
+                feat2_title: "Beide brauchen den Mod",
+                feat2_desc: "Sobald du und deine Freunde den Mod installiert habt, könnt ihr mit 1 Klick beitreten.",
+                feat3_title: "Kein Port-Forwarding",
+                feat3_desc: "Keine Router-Einstellungen nötig. P2P verbindet euch direkt.",
+                feat4_title: "Fabric 1.21.11 & 26.3",
+                feat4_desc: "Entwickelt für moderne Fabric-Versionen.",
+                how_header_title: "In 3 einfachen Schritten",
+                how_header_subtitle: "Starte deine Multiplayer-Welt in unter zwei Minuten.",
+                step1_title: "Mod Installieren (Du & Freunde)",
+                step1_desc: "Lade World Host herunter und lege es in den mods-Ordner. Wichtig: Deine Freunde brauchen ihn auch!",
+                step2_title: "Einzelspieler-Welt öffnen",
+                step2_desc: "Starte Minecraft, öffne eine Welt und klicke auf 'Welt Hosten'.",
+                step3_title: "Einladen & Spielen",
+                step3_desc: "Teile deinen Code und deine Freunde können direkt beitreten.",
+                dl_tag: "Offizielle Downloads",
+                dl_title: "World Host für Fabric herunterladen",
+                dl_subtitle: "Wähle deine Fabric-Version.",
+                dl_badge_popular: "Beliebt",
+                dl_badge_latest: "Version 26.3",
+                dl_feat_1: "Fabric Loader erforderlich",
+                dl_feat_2: "Effiziente Ressourcen-Nutzung",
+                dl_feat_3: "Integrierte Einladungs-GUI",
+                dl_btn_1: "Für Fabric 1.21.11 herunterladen",
+                dl_btn_2: "Für Fabric 26.3 herunterladen",
+                faq_header: "Häufig gestellte Fragen",
+                faq_subtitle: "Alles, was du wissen musst.",
+                faq_q1: "Müssen meine Freunde den Mod auch haben?",
+                faq_a1: "Ja! Alle Spieler benötigen den World Host Mod auf Fabric.",
+                faq_q2: "Verbraucht das Hosten viel PC-Leistung?",
+                faq_a2: "Es nutzt deine CPU und RAM. Wir empfehlen 4GB bis 6GB zugewiesenen Arbeitsspeicher.",
+                faq_q3: "Muss ich Ports im Router freigeben?",
+                faq_a3: "Nein! Keine Portfreigabe erforderlich.",
+                faq_q4: "Ist World Host kostenlos?",
+                faq_a4: "Ja, 100% kostenlos.",
+                footer_copy: "© 2026 World Host Mod. Alle Rechte vorbehalten.",
+                footer_disclaimer: "Nicht mit Mojang Studios oder Microsoft verbunden."
+            },
+            ru: {
+                nav_features: "Функции",
+                nav_how_it_works: "Как это работает",
+                nav_downloads: "Версии",
+                nav_faq: "FAQ",
+                btn_download: "Скачать мод",
+                hero_badge: "Готово для Fabric 1.21.11 и 26.3",
+                hero_title_1: "Хостите миры прямо с",
+                hero_title_2: "Железа вашего ПК",
+                hero_subtitle: "Забудьте о платных серверах Minecraft и пробросе портов. World Host использует процессор и ОЗУ вашего ПК. Вашим друзьям нужно только установить мод!",
+                hero_cta_download: "Скачать World Host",
+                hero_cta_guide: "Быстрый старт",
+                stat_free: "Бесплатно",
+                stat_modloader: "Fabric Loader",
+                stat_server_cost: "Без трат на сервер",
+                mock_copy_invite: "Скопировать ссылку-приглашение",
+                feat_header_title: "Почему World Host?",
+                feat_header_subtitle: "Забудьте о лагающих бесплатных хостингах и настройке роутера.",
+                feat1_title: "Хостинг на вашем ПК",
+                feat1_desc: "Используйте ресурсы вашего ПК (CPU и RAM) для плавной игры.",
+                feat2_title: "Мод нужен всем",
+                feat2_desc: "И вам, и вашим друзьям нужен мод World Host на Fabric для подключения в 1 клик.",
+                feat3_title: "Без проброса портов",
+                feat3_desc: "Безопасное P2P-подключение без настройки маршрутизатора.",
+                feat4_title: "Fabric 1.21.11 и 26.3",
+                feat4_desc: "Разработано специально для современных версий Fabric.",
+                how_header_title: "Как это работает (3 шага)",
+                how_header_subtitle: "Запустите ваш мир менее чем за 2 минуты.",
+                step1_title: "Установите мод (Вы и друзья)",
+                step1_desc: "Скачайте World Host для Fabric и поместите в папку mods. Друзьям тоже нужен мод!",
+                step2_title: "Откройте одиночный мир",
+                step2_desc: "Запустите мир и нажмите новую кнопку 'Хостить мир'.",
+                step3_title: "Пригласите друзей",
+                step3_desc: "Отправьте код друзьям, чтобы они сразу подключились.",
+                dl_tag: "Официальные загрузки",
+                dl_title: "Скачать World Host для Fabric",
+                dl_subtitle: "Выберите версию Fabric для вашей игры.",
+                dl_badge_popular: "Популярное",
+                dl_badge_latest: "Версия 26.3",
+                dl_feat_1: "Требуется Fabric Loader",
+                dl_feat_2: "Оптимизация ресурсов ПК",
+                dl_feat_3: "Удобный интерфейс приглашений",
+                dl_btn_1: "Скачать для Fabric 1.21.11",
+                dl_btn_2: "Скачать для Fabric 26.3",
+                faq_header: "Часто задаваемые вопросы",
+                faq_subtitle: "Всё, что вам нужно знать.",
+                faq_q1: "Нужно ли моим друзьям устанавливать мод?",
+                faq_a1: "Да! Мод World Host должен быть установлен у всех участников.",
+                faq_q2: "Нагружает ли это компьютер?",
+                faq_a2: "Используется ваш CPU и RAM. Рекомендуется выделить от 4 до 6 ГБ ОЗУ для Minecraft.",
+                faq_q3: "Нужно ли открывать порты?",
+                faq_a3: "Нет! P2P-технология работает автоматически без открытия портов.",
+                faq_q4: "World Host бесплатный?",
+                faq_a4: "Да, мод полностью бесплатный.",
+                footer_copy: "© 2026 World Host Mod. Все права защищены.",
+                footer_disclaimer: "Не связано с Mojang Studios или Microsoft."
+            },
+            zh: {
+                nav_features: "功能特性",
+                nav_how_it_works: "使用指南",
+                nav_downloads: "版本下载",
+                nav_faq: "常见问题",
+                btn_download: "下载 Mod",
+                hero_badge: "支持 Fabric 1.21.11 & 26.3",
+                hero_title_1: "直接使用你的",
+                hero_title_2: "电脑配置托管世界",
+                hero_subtitle: "无需购买昂贵的服务器或配置复杂的端口映射。World Host 允许你直接使用 CPU 和内存托管单人世界。你的朋友只需要安装这个 Mod 即可加入！",
+                hero_cta_download: "下载 World Host",
+                hero_cta_guide: "快速上手",
+                stat_free: "完全免费",
+                stat_modloader: "Fabric 加载器",
+                stat_server_cost: "零服务器费用",
+                mock_copy_invite: "复制邀请链接",
+                feat_header_title: "为什么选择 World Host？",
+                feat_header_subtitle: "摆脱高延迟免费服务器和繁琐的路由器设置。",
+                feat1_title: "利用本地电脑托管",
+                feat1_desc: "充分利用你电脑的 CPU 和内存，提供顺畅的高性能联机体验。",
+                feat2_title: "双方均需安装 Mod",
+                feat2_desc: "只要你和好友都安装了 Fabric 版的 World Host Mod，即可一键加入世界。",
+                feat3_title: "无需端口映射",
+                feat3_desc: "无需设置路由器或公网 IP，P2P 点对点网络安全自动连接。",
+                feat4_title: "Fabric 1.21.11 & 26.3",
+                feat4_desc: "原生适配 Fabric 1.21.11 以及 26.3 版本。",
+                how_header_title: "只需简单 3 步",
+                how_header_subtitle: "两分钟内开启你的多人联机世界。",
+                step1_title: "安装 Mod (你和好友)",
+                step1_desc: "下载对应的 Fabric 版本 Mod 并放入 mods 文件夹。注意：你的好友也必须安装！",
+                step2_title: "打开单人世界",
+                step2_desc: "启动游戏并进入单人世界，按 Esc 暂停并点击新增的“托管世界”按钮。",
+                step3_title: "邀请好友畅玩",
+                step3_desc: "复制邀请码发给好友，他们点击加入即可瞬间进入你的世界。",
+                dl_tag: "官方下载",
+                dl_title: "下载 Fabric 版 World Host",
+                dl_subtitle: "选择适合你 Minecraft 客户端的 Fabric 版本。",
+                dl_badge_popular: "热门版本",
+                dl_badge_latest: "版本 26.3",
+                dl_feat_1: "需要 Fabric Loader",
+                dl_feat_2: "高效资源分配",
+                dl_feat_3: "内置好友邀请界面",
+                dl_btn_1: "下载 Fabric 1.21.11 版",
+                dl_btn_2: "下载 Fabric 26.3 版",
+                faq_header: "常见问题解答",
+                faq_subtitle: "关于 World Host 的一切解答。",
+                faq_q1: "我的朋友也需要安装 World Host 吗？",
+                faq_a1: "是的！房主和所有加入的好友都必须在 Fabric 上安装 World Host 才能建立 P2P 直连。",
+                faq_q2: "托管世界会消耗很多电脑资源吗？",
+                faq_a2: "它使用你电脑的 CPU 和内存。建议给 Minecraft 分配 4GB 到 6GB 运行内存。",
+                faq_q3: "我需要开通公网 IP 或设置路由器映射吗？",
+                faq_a3: "完全不需要！Mod 采用 P2P 打洞技术自动连接。",
+                faq_q4: "World Host 是免费的吗？",
+                faq_a4: "是的，完全 100% 免费。",
+                footer_copy: "© 2026 World Host Mod. 保留所有权利。",
+                footer_disclaimer: "与 Mojang Studios 或 Microsoft 无关。"
+            },
+            ja: {
+                nav_features: "特徴",
+                nav_how_it_works: "使い方",
+                nav_downloads: "バージョン",
+                nav_faq: "よくある質問",
+                btn_download: "Modをダウンロード",
+                hero_badge: "Fabric 1.21.11 & 26.3 対応",
+                hero_title_1: "自分のPCパーツで",
+                hero_title_2: "世界を直接ホストしよう",
+                hero_subtitle: "有料サーバーの契約や面倒なポート開放は不要。World Hostを使えば、自分のPCのCPUとRAMでシングルワールドをホストできます。友達もModを入れるだけで参加可能！",
+                hero_cta_download: "World Hostをダウンロード",
+                hero_cta_guide: "クイックスタート",
+                stat_free: "完全無料",
+                stat_modloader: "Fabric Loader",
+                stat_server_cost: "サーバー費用0円",
+                mock_copy_invite: "招待リンクをコピー",
+                feat_header_title: "World Hostが選ばれる理由",
+                feat_header_subtitle: "ラグの多い無料サーバーやポート開放のトラブルから解放されましょう。",
+                feat1_title: "自分のPCでホスト",
+                feat1_desc: "PCのCPUとRAMを活用して、外部サーバーに頼らず快適にプレイ。",
+                feat2_title: "友達もModが必要",
+                feat2_desc: "ホストも参加者もWorld HostをFabricに導入していれば、1クリックで参加できます。",
+                feat3_title: "ポート開放不要",
+                feat3_desc: "ルーターの設定変更や静的IPは不要。P2P接続で安全に通信します。",
+                feat4_title: "Fabric 1.21.11 & 26.3",
+                feat4_desc: "最新のFabricモッドローダーにネイティブ対応。",
+                how_header_title: "簡単3ステップ",
+                how_header_subtitle: "2分以内にマルチプレイを開始できます。",
+                step1_title: "Modをインストール (全員)",
+                step1_desc: "World Hostをダウンロードしてmodsフォルダに入れます。※参加する友達も導入が必要です！",
+                step2_title: "シングルワールドを開く",
+                step2_desc: "ワールドを起動し、メニューから「ワールドをホスト」をクリック。",
+                step3_title: "友達を招待してプレイ",
+                step3_desc: "招待コードを送るだけで、友達がすぐにあなたのワールドに入れます。",
+                dl_tag: "公式ダウンロード",
+                dl_title: "Fabric版 World Hostをダウンロード",
+                dl_subtitle: "お使いのMinecraft環境に合わせたFabricバージョンを選択してください。",
+                dl_badge_popular: "人気",
+                dl_badge_latest: "バージョン 26.3",
+                dl_feat_1: "Fabric Loaderが必要",
+                dl_feat_2: "効率的なPCリソース割当",
+                dl_feat_3: "使いやすい招待GUI",
+                dl_btn_1: "Fabric 1.21.11用をダウンロード",
+                dl_btn_2: "Fabric 26.3用をダウンロード",
+                faq_header: "よくある質問",
+                faq_subtitle: "World Hostに関する疑問にお答えします。",
+                faq_q1: "友達もWorld Hostをインストールする必要がありますか？",
+                faq_a1: "はい！P2P通信を行うため、ホストと参加者の両方にFabric版Modが必要です。",
+                faq_q2: "PCのスペックをかなり消費しますか？",
+                faq_a2: "PCのCPUとメモリを使用します。Minecraftに4GB〜6GBのRAMを割り当てることを推奨します。",
+                faq_q3: "ルーターのポート開放は必要ですか？",
+                faq_a3: "いいえ、ポート開放は一切不要です！",
+                faq_q4: "無料で使えますか？",
+                faq_a4: "はい、完全無料です。",
+                footer_copy: "© 2026 World Host Mod. All rights reserved.",
+                footer_disclaimer: "Mojang Studios および Microsoft とは関係ありません。"
+            },
+            ko: {
+                nav_features: "기능",
+                nav_how_it_works: "사용 방법",
+                nav_downloads: "버전 다운로드",
+                nav_faq: "자주 묻는 질문",
+                btn_download: "모드 다운로드",
+                hero_badge: "Fabric 1.21.11 & 26.3 지원",
+                hero_title_1: "내 PC 사양으로 직접",
+                hero_title_2: "마인크래프트 월드 호스팅",
+                hero_subtitle: "유료 서버 비용이나 복잡한 포트포워딩 걱정 끝! World Host를 사용하면 내 PC의 CPU와 RAM으로 싱글월드를 호스팅할 수 있습니다. 친구들도 모드만 설치하면 접속 OK!",
+                hero_cta_download: "World Host 다운로드",
+                hero_cta_guide: "빠른 시작 가이드",
+                stat_free: "100% 무료",
+                stat_modloader: "Fabric 로더",
+                stat_server_cost: "서버 비용 0원",
+                mock_copy_invite: "초대 링크 복사",
+                feat_header_title: "왜 World Host인가요?",
+                feat_header_subtitle: "렉 걸리는 무료 호스팅과 어려운 포트포워딩에서 벗어나세요.",
+                feat1_title: "내 PC로 호스팅",
+                feat1_desc: "내 컴퓨터의 성능(CPU & RAM)을 활용하여 외부 서버 없이 쾌적하게 플레이하세요.",
+                feat2_title: "친구도 모드 설치 필요",
+                feat2_desc: "호스트와 친구 모두 Fabric용 World Host 모드가 설치되어 있으면 원클릭 접속 가능!",
+                feat3_title: "포트포워딩 불필요",
+                feat3_desc: "공유기 설정이나 IP 개방 없이 P2P 방식으로 안전하게 연결됩니다.",
+                feat4_title: "Fabric 1.21.11 & 26.3",
+                feat4_desc: "최신 Fabric 모드로더 버전에 완벽하게 최적화되었습니다.",
+                how_header_title: "간단한 3단계",
+                how_header_subtitle: "2분 만에 친구들과 멀티플레이를 시작하세요.",
+                step1_title: "모드 설치 (나와 친구 모두)",
+                step1_desc: "World Host 모드를 다운로드하여 mods 폴더에 넣습니다. (친구들도 설치 필수!)",
+                step2_title: "싱글플레이 월드 열기",
+                step2_desc: "월드에 접속한 뒤 메뉴에서 '월드 호스팅' 버튼을 클릭합니다.",
+                step3_title: "초대하고 함께 플레이",
+                step3_desc: "초대 코드를 전달하면 친구들이 즉시 월드에 접속할 수 있습니다.",
+                dl_tag: "공식 다운로드",
+                dl_title: "Fabric용 World Host 다운로드",
+                dl_subtitle: "사용 중인 마인크래프트 Fabric 버전을 선택하세요.",
+                dl_badge_popular: "인기",
+                dl_badge_latest: "버전 26.3",
+                dl_feat_1: "Fabric Loader 필요",
+                dl_feat_2: "효율적인 PC 자원 배분",
+                dl_feat_3: "인게임 친구 초대 GUI",
+                dl_btn_1: "Fabric 1.21.11 다운로드",
+                dl_btn_2: "Fabric 26.3 다운로드",
+                faq_header: "자주 묻는 질문",
+                faq_subtitle: "World Host에 대해 궁금한 점을 확인하세요.",
+                faq_q1: "친구들도 모드를 설치해야 하나요?",
+                faq_a1: "네! P2P 방식을 사용하므로 접속하는 친구들도 World Host 모드가 설치되어 있어야 합니다.",
+                faq_q2: "PC 리소스를 많이 먹나요?",
+                faq_a2: "호스트의 CPU와 RAM을 사용합니다. 마인크래프트에 4GB~6GB 이상의 RAM 할당을 권장합니다.",
+                faq_q3: "포트포워딩을 해야 하나요?",
+                faq_a3: "아니요, 포트포워딩이 전혀 필요 없습니다.",
+                faq_q4: "World Host는 무료인가요?",
+                faq_a4: "네, 100% 무료입니다.",
+                footer_copy: "© 2026 World Host Mod. All rights reserved.",
+                footer_disclaimer: "Mojang Studios 또는 Microsoft와 관련이 없습니다."
+            },
+            it: {
+                nav_features: "Caratteristiche",
+                nav_how_it_works: "Come Funziona",
+                nav_downloads: "Versioni",
+                nav_faq: "FAQ",
+                btn_download: "Scarica Mod",
+                hero_badge: "Pronto per Fabric 1.21.11 & 26.3",
+                hero_title_1: "Ospita mondi usando",
+                hero_title_2: "L'Hardware del tuo PC",
+                hero_subtitle: "Dimentica i server a pagamento o i problemi con il port forwarding. World Host usa la CPU e la RAM del tuo PC. I tuoi amici devono solo installare la mod!",
+                hero_cta_download: "Scarica World Host",
+                hero_cta_guide: "Guida Rapida",
+                stat_free: "100% Gratuito",
+                stat_modloader: "Fabric Loader",
+                stat_server_cost: "Zero Costi Server",
+                mock_copy_invite: "Copia Link di Invito",
+                feat_header_title: "Perché scegliere World Host?",
+                feat_header_subtitle: "Basta lag sui server gratuiti o abbonamenti mensili.",
+                feat1_title: "Ospita con il tuo PC",
+                feat1_desc: "Sfrutta CPU e RAM del tuo computer per sessioni senza lag.",
+                feat2_title: "Mod richiesta per tutti",
+                feat2_desc: "Sia tu che i tuoi amici dovete installare la mod su Fabric per connettervi in 1 click.",
+                feat3_title: "Senza Port Forwarding",
+                feat3_desc: "Nessuna configurazione del router necessaria. La rete P2P connette in modo sicuro.",
+                feat4_title: "Fabric 1.21.11 e 26.3",
+                feat4_desc: "Progettato per le versioni moderne di Fabric Loader.",
+                how_header_title: "Come funziona in 3 passi",
+                how_header_subtitle: "Avvia il tuo mondo multigiocatore in meno di due minuti.",
+                step1_title: "Installa la mod (Tu e Amici)",
+                step1_desc: "Scarica World Host e inseriscilo nella cartella mods. Importante: anche i tuoi amici devono installarlo!",
+                step2_title: "Apri il mondo singolo",
+                step2_desc: "Avvia il mondo e clicca sul nuovo pulsante 'Ospita Mondo'.",
+                step3_title: "Invita e Gioca",
+                step3_desc: "Invia il codice ai tuoi amici per farlo entrare all'istante.",
+                dl_tag: "Download Ufficiali",
+                dl_title: "Scarica World Host per Fabric",
+                dl_subtitle: "Scegli la versione Fabric corrispondente al tuo Minecraft.",
+                dl_badge_popular: "Popolare",
+                dl_badge_latest: "Versione 26.3",
+                dl_feat_1: "Richiede Fabric Loader",
+                dl_feat_2: "Gestione efficiente delle risorse",
+                dl_feat_3: "GUI di invito integrata",
+                dl_btn_1: "Scarica per Fabric 1.21.11",
+                dl_btn_2: "Scarica per Fabric 26.3",
+                faq_header: "Domande Frequenti",
+                faq_subtitle: "Tutto quello che c'è da sapere.",
+                faq_q1: "Anche i miei amici devono installare World Host?",
+                faq_a1: "Sì! Tutti i giocatori devono avere la mod installata su Fabric.",
+                faq_q2: "Ospitare consuma molte risorse del PC?",
+                faq_a2: "Utilizza la CPU e la RAM del tuo PC. Consigliamo di assegnare da 4GB a 6GB di RAM a Minecraft.",
+                faq_q3: "Devo aprire le porte del router?",
+                faq_a3: "No, nessun port forwarding richiesto!",
+                faq_q4: "World Host è gratuito?",
+                faq_a4: "Sì, completamente gratuito.",
+                footer_copy: "© 2026 World Host Mod. Tutti i diritti riservati.",
+                footer_disclaimer: "Non affiliato con Mojang Studios o Microsoft."
+            }
+        };
+
+        const langNames = {
+            en: "English",
+            es: "Español",
+            pt: "Português",
+            fr: "Français",
+            de: "Deutsch",
+            ru: "Русский",
+            zh: "中文",
+            ja: "日本語",
+            ko: "한국어",
+            it: "Italiano"
+        };
+
+        let currentLang = 'en';
+
+        // Toggle Language Dropdown UI
+        function toggleLangDropdown() {
+            const dropdown = document.getElementById('langDropdown');
+            dropdown.classList.toggle('hidden');
+        }
+
+        // Close Dropdown when clicking outside
+        window.addEventListener('click', function(e) {
+            const btn = document.getElementById('langBtn');
+            const dropdown = document.getElementById('langDropdown');
+            if (btn && dropdown && !btn.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.classList.add('hidden');
+            }
+        });
+
+        // Switch Language Function
+        function changeLanguage(langCode) {
+            if (!translations[langCode]) return;
+            currentLang = langCode;
+
+            // Update Header Text
+            document.getElementById('currentLangText').innerText = langNames[langCode];
+
+            // Update all DOM elements with data-i18n
+            const elements = document.querySelectorAll('[data-i18n]');
+            elements.forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (translations[langCode][key]) {
+                    el.innerHTML = translations[langCode][key];
+                }
+            });
+
+            // Hide Dropdown
+            document.getElementById('langDropdown').classList.add('hidden');
+        }
+
+        // Toggle FAQ Accordion
+        function toggleFaq(index) {
+            const ans = document.getElementById(`faq-ans-${index}`);
+            const icon = document.getElementById(`faq-icon-${index}`);
+            
+            if (ans.classList.contains('hidden')) {
+                ans.classList.remove('hidden');
+                icon.classList.add('rotate-180');
+            } else {
+                ans.classList.add('hidden');
+                icon.classList.remove('rotate-180');
+            }
+        }
+
+        // Toggle Mobile Menu
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobileMenu');
+            menu.classList.toggle('hidden');
+        }
+
+        // Toast Notification System
+        function triggerToast(title, msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-title').innerText = title;
+            document.getElementById('toast-msg').innerText = msg;
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3500);
+        }
+
+        function startDownload(version) {
+            triggerToast(`Downloading World Host ${version}`, 'Check your downloads folder shortly.');
+        }
+    </script>
+</body>
+</html>
